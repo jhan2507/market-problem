@@ -1,0 +1,4 @@
+"""
+Shared modules for microservices.
+"""
+

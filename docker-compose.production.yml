@@ -1,0 +1,75 @@
+# Docker Compose override for production environment
+
+version: '3.8'
+
+services:
+  market_data_service:
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  market_analyzer_service:
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  price_service:
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  signal_service:
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  notification_service:
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+

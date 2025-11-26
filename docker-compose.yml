@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: market_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - market_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: market_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - market_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  market_data_service:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-market-data-service:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/market_data_service/Dockerfile
+    container_name: market_data_service
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BINANCE_API_URL=https://api.binance.com
+      - CMC_API_KEY=${CMC_API_KEY}
+      - COINS=${COINS}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+
+  market_analyzer_service:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-market-analyzer-service:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/market_analyzer_service/Dockerfile
+    container_name: market_analyzer_service
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+
+  price_service:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-price-service:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/price_service/Dockerfile
+    container_name: price_service
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - BINANCE_API_URL=https://api.binance.com
+      - COINS=${COINS}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+
+  signal_service:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-signal-service:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/signal_service/Dockerfile
+    container_name: signal_service
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+
+  notification_service:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-notification-service:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/notification_service/Dockerfile
+    container_name: notification_service
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_PRICE_CHAT_ID=${TELEGRAM_PRICE_CHAT_ID}
+      - TELEGRAM_SIGNAL_CHAT_ID=${TELEGRAM_SIGNAL_CHAT_ID}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  market_network:
+    driver: bridge
+

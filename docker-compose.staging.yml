@@ -1,0 +1,35 @@
+# Docker Compose override for staging environment
+
+version: '3.8'
+
+services:
+  market_data_service:
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+    restart: unless-stopped
+
+  market_analyzer_service:
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+    restart: unless-stopped
+
+  price_service:
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+    restart: unless-stopped
+
+  signal_service:
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+    restart: unless-stopped
+
+  notification_service:
+    environment:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+    restart: unless-stopped
+
