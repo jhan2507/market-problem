@@ -5,7 +5,7 @@ SERVICE=${1:-""}
 
 if [ -z "$SERVICE" ]; then
     echo "📊 Viewing logs for all services..."
-    echo "Usage: ./scripts/logs.sh [service_name]"
+    echo "Usage: ./scripts/monitor/logs.sh [service_name]"
     echo ""
     echo "Available services:"
     echo "  - market_data_service"

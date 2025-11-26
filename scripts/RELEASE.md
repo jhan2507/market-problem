@@ -14,32 +14,64 @@ Hệ thống sử dụng [Semantic Versioning](https://semver.org/):
 
 ### Xem version hiện tại
 ```bash
-./scripts/version.sh show
+./scripts/release/version.sh show
 ```
 
 ### Set version cụ thể
 ```bash
-./scripts/version.sh set 1.2.3
+./scripts/release/version.sh set 1.2.3
 ```
 
 ### Bump version
 ```bash
 # Patch (0.0.X) - Bug fixes
-./scripts/version.sh bump patch
+./scripts/release/version.sh bump patch
 
 # Minor (0.X.0) - New features
-./scripts/version.sh bump minor
+./scripts/release/version.sh bump minor
 
 # Major (X.0.0) - Breaking changes
-./scripts/version.sh bump major
+./scripts/release/version.sh bump major
 ```
 
 ## Release Process
 
-### 1. Tạo Release mới
+### 🚀 Go Live (Quick - Khuyến nghị)
+
+Cách nhanh nhất để golive code lên production:
 
 ```bash
-./scripts/release.sh
+./scripts/release/golive.sh staging
+```
+
+Script này tự động thực hiện:
+1. ✅ Validate environment
+2. ✅ Bump version (patch/minor/major)
+3. ✅ Merge staging vào master
+4. ✅ Tạo git tag
+5. ✅ Build Docker images
+6. ✅ Generate release notes
+7. ✅ Push to remote
+8. ✅ Deploy to production
+
+**⚠️ Safety:** Yêu cầu xác nhận "GOLIVE" trước khi thực hiện.
+
+**Examples:**
+```bash
+# Go live từ staging (khuyến nghị)
+./scripts/release/golive.sh staging
+
+# Go live từ develop
+./scripts/release/golive.sh develop
+
+# Go live và skip build
+./scripts/release/golive.sh staging true
+```
+
+### 1. Tạo Release mới (Manual)
+
+```bash
+./scripts/release/release.sh
 ```
 
 Script sẽ:
@@ -53,10 +85,10 @@ Script sẽ:
 
 ```bash
 # Build với version hiện tại
-./scripts/build.sh
+./scripts/release/build.sh
 
 # Hoặc build với custom registry
-DOCKER_REGISTRY=registry.example.com IMAGE_PREFIX=myapp ./scripts/build.sh
+DOCKER_REGISTRY=registry.example.com IMAGE_PREFIX=myapp ./scripts/release/build.sh
 ```
 
 ### 3. Push Images (nếu dùng registry)
@@ -67,19 +99,19 @@ export DOCKER_REGISTRY=registry.example.com
 export IMAGE_PREFIX=myapp
 
 # Push images
-./scripts/push.sh
+./scripts/release/push.sh
 ```
 
 ### 4. Deploy
 
 #### Staging
 ```bash
-./scripts/deploy.sh staging
+./scripts/release/deploy.sh staging
 ```
 
 #### Production
 ```bash
-./scripts/deploy.sh production
+./scripts/release/deploy.sh production
 ```
 
 **Lưu ý:** Production deployment yêu cầu xác nhận.
@@ -103,12 +135,12 @@ export IMAGE_PREFIX=myapp
 
 ### Rollback về version trước
 ```bash
-./scripts/rollback.sh production
+./scripts/release/rollback.sh production
 ```
 
 ### Rollback về version cụ thể
 ```bash
-./scripts/rollback.sh production 1.2.0
+./scripts/release/rollback.sh production 1.2.0
 ```
 
 ## CI/CD
@@ -185,25 +217,25 @@ git checkout staging
 git merge feature/new-feature
 
 # 3. Create release
-./scripts/release.sh
+./scripts/release/release.sh
 # Select: Minor bump
 
 # 4. Deploy to staging
-./scripts/deploy.sh staging
+./scripts/release/deploy.sh staging
 
 # 5. Test staging
-./scripts/monitor.sh
-./scripts/health.sh
+./scripts/monitor/monitor.sh
+./scripts/monitor/health.sh
 
 # 6. Merge to main
 git checkout main
 git merge staging
 
 # 7. Deploy to production
-./scripts/deploy.sh production
+./scripts/release/deploy.sh production
 
 # 8. Monitor production
-./scripts/monitor.sh
+./scripts/monitor/monitor.sh
 ```
 
 ## Environment Variables
@@ -285,8 +317,8 @@ docker push registry.example.com/market-service:1.2.3
 ## Monitoring
 
 Sau mỗi deployment:
-1. Check health: `./scripts/health.sh`
-2. Monitor logs: `./scripts/logs.sh`
-3. Check stats: `./scripts/stats.sh`
-4. Monitor real-time: `./scripts/monitor.sh`
+1. Check health: `./scripts/monitor/health.sh`
+2. Monitor logs: `./scripts/monitor/logs.sh`
+3. Check stats: `./scripts/monitor/stats.sh`
+4. Monitor real-time: `./scripts/monitor/monitor.sh`
 

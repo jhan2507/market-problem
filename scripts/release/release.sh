@@ -28,7 +28,7 @@ case $choice in
 esac
 
 # Bump version
-NEW_VERSION=$(./scripts/version.sh bump "$BUMP_TYPE")
+NEW_VERSION=$(./scripts/release/version.sh bump "$BUMP_TYPE")
 echo ""
 echo "✅ New version: $NEW_VERSION"
 
@@ -36,7 +36,7 @@ echo "✅ New version: $NEW_VERSION"
 echo ""
 read -p "Build Docker images? (y/n): " build_choice
 if [ "$build_choice" = "y" ]; then
-    ./scripts/build.sh
+    ./scripts/release/build.sh
 fi
 
 # Create git tag
@@ -64,7 +64,7 @@ fi
 echo ""
 read -p "Generate release notes? (y/n): " notes_choice
 if [ "$notes_choice" = "y" ]; then
-    ./scripts/release_notes.sh "$NEW_VERSION" > "releases/v${NEW_VERSION}.md"
+    ./scripts/release/release_notes.sh "$NEW_VERSION" > "releases/v${NEW_VERSION}.md"
     echo "✅ Release notes created: releases/v${NEW_VERSION}.md"
 fi
 
@@ -73,8 +73,8 @@ echo "🎉 Release v$NEW_VERSION created successfully!"
 echo ""
 echo "Next steps:"
 echo "  1. Review release notes"
-echo "  2. Build and push images: ./scripts/push.sh"
-echo "  3. Deploy to staging: ./scripts/deploy.sh staging"
+echo "  2. Build and push images: ./scripts/release/push.sh"
+echo "  3. Deploy to staging: ./scripts/release/deploy.sh staging"
 echo "  4. Test staging environment"
-echo "  5. Deploy to production: ./scripts/deploy.sh production"
+echo "  5. Deploy to production: ./scripts/release/deploy.sh production"
 

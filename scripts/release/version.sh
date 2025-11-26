@@ -68,7 +68,7 @@ case "$1" in
         ;;
     set)
         if [ -z "$2" ]; then
-            echo "❌ Usage: ./scripts/version.sh set <version>"
+            echo "❌ Usage: ./scripts/release/version.sh set <version>"
             echo "   Example: ./scripts/version.sh set 1.2.3"
             exit 1
         fi
@@ -76,7 +76,7 @@ case "$1" in
         ;;
     bump)
         if [ -z "$2" ]; then
-            echo "❌ Usage: ./scripts/version.sh bump <major|minor|patch>"
+            echo "❌ Usage: ./scripts/release/version.sh bump <major|minor|patch>"
             exit 1
         fi
         increment_version "$2"
@@ -85,7 +85,7 @@ case "$1" in
         show_version
         ;;
     *)
-        echo "Usage: ./scripts/version.sh {get|set|bump|show}"
+        echo "Usage: ./scripts/release/version.sh {get|set|bump|show}"
         echo ""
         echo "Commands:"
         echo "  get              - Get current version"

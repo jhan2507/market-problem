@@ -291,7 +291,7 @@ docker-compose logs -f notification_service
 
 Hoặc sử dụng script:
 ```bash
-./scripts/logs.sh [service_name]
+./scripts/monitor/logs.sh [service_name]
 ```
 
 ### MongoDB Collections
@@ -354,6 +354,21 @@ Hệ thống hỗ trợ quản lý version và deployment lên staging/productio
 ./scripts/release/deploy.sh production
 ```
 
+### Go Live (Quick)
+
+```bash
+# Go live từ staging lên production (khuyến nghị)
+./scripts/release/golive.sh staging
+```
+
+Script này tự động:
+- Bump version
+- Merge vào master
+- Build images
+- Create git tag
+- Generate release notes
+- Deploy to production
+
 ### Rollback
 
 ```bash
@@ -364,7 +379,7 @@ Hệ thống hỗ trợ quản lý version và deployment lên staging/productio
 ./scripts/release/rollback.sh production 1.2.0
 ```
 
-Xem chi tiết trong [scripts/RELEASE.md](scripts/RELEASE.md)
+Xem chi tiết trong [scripts/release/README.md](scripts/release/README.md)
 
 ## Phát triển
 

@@ -5,7 +5,7 @@ Nếu gặp lỗi khi setup branches, sử dụng các cách sau:
 ## Cách 1: Sử dụng fix script (Khuyến nghị)
 
 ```bash
-./scripts/git/fix_branches.sh
+./scripts/git/setup_repo.sh --fix
 ```
 
 Script này sẽ:

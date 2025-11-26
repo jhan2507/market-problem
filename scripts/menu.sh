@@ -20,9 +20,10 @@ show_menu() {
     echo "10. 💾 Backup Database"
     echo "11. 🔄 Restore Database"
     echo "12. 🧹 Cleanup"
-    echo "13. ❌ Exit"
+    echo "13. 🐳 Access Containers"
+    echo "14. ❌ Exit"
     echo ""
-    read -p "Select option [1-13]: " choice
+    read -p "Select option [1-14]: " choice
 }
 
 while true; do
@@ -30,15 +31,15 @@ while true; do
     
     case $choice in
         1)
-            ./scripts/start.sh
+            ./scripts/deploy/start.sh
             read -p "Press Enter to continue..."
             ;;
         2)
-            ./scripts/stop.sh
+            ./scripts/deploy/stop.sh
             read -p "Press Enter to continue..."
             ;;
         3)
-            ./scripts/restart.sh
+            ./scripts/deploy/restart.sh
             read -p "Press Enter to continue..."
             ;;
         4)
@@ -64,23 +65,23 @@ while true; do
                 8) SERVICE="" ;;
                 *) SERVICE="" ;;
             esac
-            ./scripts/logs.sh "$SERVICE"
+            ./scripts/monitor/logs.sh "$SERVICE"
             read -p "Press Enter to continue..."
             ;;
         5)
-            ./scripts/status.sh
+            ./scripts/monitor/status.sh
             read -p "Press Enter to continue..."
             ;;
         6)
-            ./scripts/health.sh
+            ./scripts/monitor/health.sh
             read -p "Press Enter to continue..."
             ;;
         7)
-            ./scripts/stats.sh
+            ./scripts/monitor/stats.sh
             read -p "Press Enter to continue..."
             ;;
         8)
-            ./scripts/monitor.sh
+            ./scripts/monitor/monitor.sh
             ;;
         9)
             echo ""
@@ -100,12 +101,12 @@ while true; do
                 *) SERVICE="" ;;
             esac
             if [ ! -z "$SERVICE" ]; then
-                ./scripts/restart_service.sh "$SERVICE"
+                ./scripts/deploy/restart_service.sh "$SERVICE"
             fi
             read -p "Press Enter to continue..."
             ;;
         10)
-            ./scripts/backup.sh
+            ./scripts/utils/backup.sh
             read -p "Press Enter to continue..."
             ;;
         11)
@@ -115,15 +116,18 @@ while true; do
             echo ""
             read -p "Enter backup file path: " backup_file
             if [ ! -z "$backup_file" ]; then
-                ./scripts/restore.sh "$backup_file"
+                ./scripts/utils/restore.sh "$backup_file"
             fi
             read -p "Press Enter to continue..."
             ;;
         12)
-            ./scripts/cleanup.sh
+            ./scripts/utils/cleanup.sh
             read -p "Press Enter to continue..."
             ;;
         13)
+            ./scripts/utils/access.sh
+            ;;
+        14)
             echo "👋 Goodbye!"
             exit 0
             ;;

@@ -34,7 +34,10 @@ scripts/
 │   ├── import_data.sh
 │   ├── validate_config.sh
 │   ├── check_dependencies.sh
-│   └── scale.sh
+│   ├── scale.sh
+│   ├── exec.sh           # Execute commands in containers
+│   ├── shell.sh          # Open shell in containers
+│   └── access.sh         # Interactive container access menu
 │
 └── release/              # Release management
     ├── version.sh
@@ -214,6 +217,59 @@ Kiểm tra:
 ./scripts/utils/scale.sh price_service 3
 ```
 Tăng/giảm số lượng instances của một service.
+
+### Access Containers
+
+#### Interactive Menu
+```bash
+./scripts/utils/access.sh
+```
+Menu tương tác để access các container:
+- MongoDB Shell (mongosh)
+- Redis CLI
+- Service shells (bash/sh)
+- List running containers
+- Execute custom commands
+
+#### Execute Command in Container
+```bash
+./scripts/utils/exec.sh <container_name> <command>
+```
+Thực thi lệnh trong container.
+
+**Examples:**
+```bash
+# MongoDB
+./scripts/utils/exec.sh market_mongodb 'mongosh --eval "db.adminCommand(\"ping\")"'
+
+# Redis
+./scripts/utils/exec.sh market_redis 'redis-cli ping'
+
+# Service
+./scripts/utils/exec.sh signal_service 'python --version'
+```
+
+**Available containers:**
+- `market_mongodb`
+- `market_redis`
+- `market_data_service`
+- `market_analyzer_service`
+- `price_service`
+- `signal_service`
+- `notification_service`
+
+#### Open Shell in Container
+```bash
+./scripts/utils/shell.sh <container_name> [shell]
+```
+Mở interactive shell trong container (mặc định: `sh`, có thể dùng `bash`).
+
+**Examples:**
+```bash
+./scripts/utils/shell.sh market_mongodb
+./scripts/utils/shell.sh signal_service bash
+./scripts/utils/shell.sh market_redis
+```
 
 ## 🚀 RELEASE
 

@@ -62,22 +62,22 @@ case $choice in
     1)
         echo ""
         echo "🚀 Starting development environment..."
-        ./scripts/start.sh
+        ./scripts/deploy/start.sh
         ;;
     2)
         echo ""
         echo "📦 Creating release..."
-        ./scripts/release.sh
+        ./scripts/release/release.sh
         echo ""
         echo "🚀 Deploying to staging..."
-        ./scripts/deploy.sh staging
+        ./scripts/release/deploy.sh staging
         ;;
     3)
         echo ""
         echo "⚠️  WARNING: Production deployment!"
         read -p "Are you sure? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
-            ./scripts/deploy.sh production
+            ./scripts/release/deploy.sh production
         else
             echo "❌ Cancelled"
         fi

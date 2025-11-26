@@ -2,7 +2,7 @@
 # Script restore MongoDB database
 
 if [ -z "$1" ]; then
-    echo "❌ Usage: ./scripts/restore.sh <backup_file.archive.gz>"
+    echo "❌ Usage: ./scripts/utils/restore.sh <backup_file.archive.gz>"
     echo ""
     echo "Available backups:"
     ls -lh backups/*.gz 2>/dev/null || echo "  No backups found"

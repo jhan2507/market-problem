@@ -61,6 +61,6 @@ for service in "${SERVICES[@]}"; do
 done
 
 echo ""
-echo "💡 To push images: ./scripts/push.sh"
-echo "💡 To deploy: ./scripts/deploy.sh <environment>"
+echo "💡 To push images: ./scripts/release/push.sh"
+echo "💡 To deploy: ./scripts/release/deploy.sh <environment>"
 

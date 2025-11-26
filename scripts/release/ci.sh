@@ -33,25 +33,25 @@ echo ""
 
 # Build images
 echo "🔨 Building images..."
-./scripts/build.sh
+./scripts/release/build.sh
 echo ""
 
 # Push images (if registry is set)
 if [ ! -z "$DOCKER_REGISTRY" ]; then
     echo "📤 Pushing images..."
-    ./scripts/push.sh
+    ./scripts/release/push.sh
     echo ""
 fi
 
 # Deploy
 echo "🚀 Deploying to $ENVIRONMENT..."
-./scripts/deploy.sh "$ENVIRONMENT"
+./scripts/release/deploy.sh "$ENVIRONMENT"
 echo ""
 
 # Health check
 echo "🏥 Running health check..."
 sleep 15
-./scripts/health.sh
+./scripts/monitor/health.sh
 echo ""
 
 echo "✅ CI/CD pipeline completed successfully!"

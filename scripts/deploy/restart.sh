@@ -8,5 +8,5 @@ docker-compose restart
 echo ""
 echo "✅ System restarted successfully!"
 echo ""
-echo "📊 View logs: ./scripts/logs.sh"
+echo "📊 View logs: ./scripts/monitor/logs.sh"
 

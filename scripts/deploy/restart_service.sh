@@ -24,7 +24,7 @@ docker-compose restart "$SERVICE"
 if [ $? -eq 0 ]; then
     echo "✅ $SERVICE restarted successfully"
     echo ""
-    echo "📊 View logs: ./scripts/logs.sh $SERVICE"
+    echo "📊 View logs: ./scripts/monitor/logs.sh $SERVICE"
 else
     echo "❌ Failed to restart $SERVICE"
     exit 1

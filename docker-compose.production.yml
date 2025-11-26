@@ -1,7 +1,5 @@
 # Docker Compose override for production environment
 
-version: '3.8'
-
 services:
   market_data_service:
     environment:

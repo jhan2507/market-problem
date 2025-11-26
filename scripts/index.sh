@@ -33,19 +33,22 @@ show_menu() {
     echo "  16. Validate Config"
     echo "  17. Check Dependencies"
     echo "  18. Scale Service"
+    echo "  19. Access Containers (Interactive)"
+    echo "  20. Execute Command in Container"
+    echo "  21. Open Shell in Container"
     echo ""
     echo "🚀 RELEASE"
-    echo "  19. Version Management"
-    echo "  20. Build Images"
-    echo "  21. Push Images"
-    echo "  22. Create Release"
-    echo "  23. Deploy to Environment"
-    echo "  24. Rollback"
+    echo "  22. Version Management"
+    echo "  23. Build Images"
+    echo "  24. Push Images"
+    echo "  25. Create Release"
+    echo "  26. Deploy to Environment"
+    echo "  27. Rollback"
     echo ""
-    echo "  25. Quick Start Guide"
-    echo "  26. Exit"
+    echo "  28. Quick Start Guide"
+    echo "  29. Exit"
     echo ""
-    read -p "Select option [1-26]: " choice
+    read -p "Select option [1-29]: " choice
 }
 
 run_script() {
@@ -99,25 +102,36 @@ while true; do
             read -p "Replicas: " replicas
             run_script "utils" "scale.sh" "$service" "$replicas"
             ;;
-        19)
+        19) run_script "utils" "access.sh" ;;
+        20)
+            read -p "Container name: " container
+            read -p "Command: " cmd
+            run_script "utils" "exec.sh" "$container" "$cmd"
+            ;;
+        21)
+            read -p "Container name: " container
+            read -p "Shell (sh/bash, default: sh): " shell
+            run_script "utils" "shell.sh" "$container" "${shell:-sh}"
+            ;;
+        22)
             read -p "Command (get/set/bump/show): " cmd
             read -p "Value (optional): " value
             run_script "release" "version.sh" "$cmd" "$value"
             ;;
-        20) run_script "release" "build.sh" ;;
-        21) run_script "release" "push.sh" ;;
-        22) run_script "release" "release.sh" ;;
-        23)
+        23) run_script "release" "build.sh" ;;
+        24) run_script "release" "push.sh" ;;
+        25) run_script "release" "release.sh" ;;
+        26)
             read -p "Environment (staging/production): " env
             run_script "release" "deploy.sh" "$env"
             ;;
-        24)
+        27)
             read -p "Environment (staging/production): " env
             read -p "Version (optional): " version
             run_script "release" "rollback.sh" "$env" "$version"
             ;;
-        25) bash "$SCRIPT_DIR/quick_start.sh" ;;
-        26)
+        28) bash "$SCRIPT_DIR/quick_start.sh" ;;
+        29)
             echo "👋 Goodbye!"
             exit 0
             ;;
@@ -127,7 +141,7 @@ while true; do
             ;;
     esac
     
-    if [ $? -ne 0 ] && [ "$choice" != "26" ]; then
+    if [ $? -ne 0 ] && [ "$choice" != "29" ]; then
         read -p "Press Enter to continue..."
     fi
 done

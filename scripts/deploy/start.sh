@@ -47,7 +47,7 @@ docker-compose ps
 echo ""
 echo "✅ System started successfully!"
 echo ""
-echo "📊 View logs: ./scripts/logs.sh"
-echo "📈 Monitor services: ./scripts/status.sh"
-echo "🛑 Stop system: ./scripts/stop.sh"
+echo "📊 View logs: ./scripts/monitor/logs.sh"
+echo "📈 Monitor services: ./scripts/monitor/status.sh"
+echo "🛑 Stop system: ./scripts/deploy/stop.sh"
 

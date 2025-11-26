@@ -7,7 +7,7 @@ ENVIRONMENT=${1:-""}
 TARGET_VERSION=${2:-""}
 
 if [ -z "$ENVIRONMENT" ]; then
-    echo "❌ Usage: ./scripts/rollback.sh <environment> [version]"
+    echo "❌ Usage: ./scripts/release/rollback.sh <environment> [version]"
     echo ""
     echo "Environments:"
     echo "  - staging"
@@ -37,7 +37,7 @@ if [ -z "$TARGET_VERSION" ]; then
     
     if [ -z "$TARGET_VERSION" ]; then
         echo "❌ Could not determine previous version"
-        echo "   Please specify version: ./scripts/rollback.sh $ENVIRONMENT <version>"
+        echo "   Please specify version: ./scripts/release/rollback.sh $ENVIRONMENT <version>"
         exit 1
     fi
 fi
@@ -71,11 +71,11 @@ echo "✅ Version file updated to $TARGET_VERSION"
 # Deploy với version cũ
 echo ""
 echo "🔄 Rolling back to v$TARGET_VERSION..."
-./scripts/deploy.sh "$ENVIRONMENT"
+./scripts/release/deploy.sh "$ENVIRONMENT"
 
 echo ""
 echo "✅ Rollback completed!"
 echo ""
-echo "📊 Verify deployment: ./scripts/status.sh"
-echo "📈 Monitor: ./scripts/monitor.sh"
+echo "📊 Verify deployment: ./scripts/monitor/status.sh"
+echo "📈 Monitor: ./scripts/monitor/monitor.sh"
 

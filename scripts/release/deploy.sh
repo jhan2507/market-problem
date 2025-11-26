@@ -10,7 +10,7 @@ REGISTRY=${DOCKER_REGISTRY:-""}
 IMAGE_PREFIX=${IMAGE_PREFIX:-"market"}
 
 if [ -z "$ENVIRONMENT" ]; then
-    echo "❌ Usage: ./scripts/deploy.sh <environment>"
+    echo "❌ Usage: ./scripts/release/deploy.sh <environment>"
     echo ""
     echo "Environments:"
     echo "  - staging"
@@ -92,7 +92,7 @@ sleep 10
 # Health check
 echo ""
 echo "🏥 Running health check..."
-./scripts/health.sh
+./scripts/monitor/health.sh
 
 # Show status
 echo ""
@@ -102,6 +102,6 @@ docker-compose $COMPOSE_FILE ps
 echo ""
 echo "✅ Deployment to $ENVIRONMENT completed!"
 echo ""
-echo "📊 View logs: ./scripts/logs.sh"
-echo "📈 Monitor: ./scripts/monitor.sh"
+echo "📊 View logs: ./scripts/monitor/logs.sh"
+echo "📈 Monitor: ./scripts/monitor/monitor.sh"
 

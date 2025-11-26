@@ -6,7 +6,23 @@ Scripts quản lý Git repository và workflow.
 
 ### Initial Setup
 ```bash
+./scripts/git/setup_repo.sh [options]
+```
+
+**Options:**
+- `--fix` - Fix branches nếu có vấn đề
+- `--push` - Push branches sau khi setup
+
+**Examples:**
+```bash
+# Setup cơ bản
 ./scripts/git/setup_repo.sh
+
+# Setup và fix branches
+./scripts/git/setup_repo.sh --fix
+
+# Setup và push luôn
+./scripts/git/setup_repo.sh --push
 ```
 
 Script sẽ:
@@ -15,13 +31,6 @@ Script sẽ:
 - Tạo các branches: master, staging, develop
 - Tạo initial commit nếu cần
 - Tạo .gitattributes
-
-### Fix Branches (nếu gặp lỗi)
-```bash
-./scripts/git/fix_branches.sh
-```
-
-Nếu gặp lỗi khi setup, chạy script này để fix các branches.
 
 ## Branch Structure
 
@@ -44,17 +53,34 @@ Setup Git repository và tạo các branches cơ bản.
 ```
 
 ### push.sh
-Push branch lên remote.
+Push branch lên remote với nhiều modes.
 
 ```bash
-./scripts/git/push.sh [branch] [remote]
+./scripts/git/push.sh [options] [branch] [remote]
 ```
 
-Examples:
+**Options:**
+- `--pull` - Pull từ remote trước khi push (safe, khuyến nghị)
+- `--sync` - Sync với remote, xử lý conflicts tự động
+- `--force` - Force push (nguy hiểm, ghi đè remote)
+- Không có option - Push bình thường, check conflicts
+
+**Examples:**
 ```bash
+# Push bình thường (check conflicts)
 ./scripts/git/push.sh master
-./scripts/git/push.sh staging origin
+
+# Pull rồi push (safe)
+./scripts/git/push.sh --pull master
+
+# Sync với remote (xử lý conflicts)
+./scripts/git/push.sh --sync master
+
+# Force push (cẩn thận!)
+./scripts/git/push.sh --force master
 ```
+
+**Khuyến nghị:** Luôn dùng `--pull` nếu remote đã có code.
 
 ### create_branch.sh
 Tạo branch mới.
@@ -96,6 +122,8 @@ Merge staging vào production (master).
 ```
 
 **⚠️ WARNING:** Requires confirmation "DEPLOY"
+
+**💡 Khuyến nghị:** Sử dụng `./scripts/release/golive.sh` thay vì script này để có đầy đủ workflow (version, build, deploy).
 
 Example:
 ```bash

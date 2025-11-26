@@ -3,10 +3,33 @@
 
 set -e
 
+# Parse options
+FIX_MODE=false
+PUSH_AFTER=false
 REPO_URL="git@personal:jhan2507/market-problem.git"
 
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --fix)
+            FIX_MODE=true
+            shift
+            ;;
+        --push)
+            PUSH_AFTER=true
+            shift
+            ;;
+        --repo)
+            REPO_URL="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 echo "🔧 Setting up Git Repository"
-echo "============================"
+echo "=============================="
 echo ""
 
 # Check if git is installed
@@ -17,10 +40,12 @@ fi
 
 # Check if already a git repo
 if [ -d .git ]; then
-    echo "⚠️  Git repository already exists"
-    read -p "Continue with setup? (y/n): " confirm
-    if [ "$confirm" != "y" ]; then
-        exit 0
+    if [ "$FIX_MODE" = false ]; then
+        echo "⚠️  Git repository already exists"
+        read -p "Continue with setup? (y/n): " confirm
+        if [ "$confirm" != "y" ]; then
+            exit 0
+        fi
     fi
 else
     echo "📦 Initializing Git repository..."
@@ -58,10 +83,19 @@ CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
 # Check if we have any commits
 HAS_COMMITS=$(git rev-parse --verify HEAD >/dev/null 2>&1 && echo "yes" || echo "no")
 
+# If fix mode and no commits, make initial commit
+if [ "$FIX_MODE" = true ] && [ "$HAS_COMMITS" = "no" ]; then
+    echo "📝 Making initial commit..."
+    git add -A
+    git commit -m "Initial commit: Crypto Market Monitoring System" || {
+        echo "⚠️  No files to commit or commit failed"
+    }
+    HAS_COMMITS="yes"
+fi
+
 # Create master branch (Production)
 if git show-ref --verify --quiet refs/heads/master; then
     echo "✅ master branch already exists"
-    # Try to checkout master, but don't fail if we can't
     git checkout master 2>/dev/null || true
 else
     # Create master branch
@@ -72,7 +106,7 @@ else
         echo "✅ Created master branch (Production)"
         
         # Make initial commit if there are untracked files
-        UNTRACKED=$(git ls-files --others --exclude-standard | wc -l)
+        UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l)
         if [ "$UNTRACKED" -gt 0 ]; then
             echo "📝 Making initial commit..."
             git add -A
@@ -176,11 +210,27 @@ EOF
     echo "✅ .gitattributes created"
 fi
 
+# Push if requested
+if [ "$PUSH_AFTER" = true ]; then
+    echo ""
+    echo "📤 Pushing branches to remote..."
+    BRANCHES=("master" "staging" "develop")
+    for branch in "${BRANCHES[@]}"; do
+        if git show-ref --verify --quiet refs/heads/"$branch"; then
+            echo "📤 Pushing $branch..."
+            ./scripts/git/push.sh --pull "$branch" 2>/dev/null || \
+            ./scripts/git/push.sh "$branch" 2>/dev/null || \
+            echo "⚠️  Failed to push $branch"
+        fi
+    done
+fi
+
 echo ""
 echo "✅ Git repository setup completed!"
 echo ""
-echo "Next steps:"
-echo "  1. Review and commit your changes"
-echo "  2. Push to remote: ./scripts/git/push.sh [branch]"
-echo "  3. Or use: git push -u origin master"
-
+if [ "$PUSH_AFTER" = false ]; then
+    echo "Next steps:"
+    echo "  1. Review and commit your changes"
+    echo "  2. Push to remote: ./scripts/git/push.sh [branch]"
+    echo "  3. Or use: ./scripts/git/push.sh --pull [branch] (safe)"
+fi
