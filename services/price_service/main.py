@@ -108,15 +108,15 @@ class PriceService:
         return None
     
     def create_price_message(self, prices: Dict[str, float]) -> str:
-        """Create readable price message."""
-        lines = ["💰 <b>Giá coin cập nhật:</b>\n"]
-        
+        """Create price message in format BTC:xxx|ETH:xxx|..."""
+        price_parts = []
         for symbol, price in prices.items():
             # Format symbol (remove USDT)
             coin_name = symbol.replace("USDT", "")
-            lines.append(f"{coin_name}: ${price:,.2f}")
+            # Format as COIN:price (no $, no commas)
+            price_parts.append(f"{coin_name}:{price:.2f}")
         
-        return "\n".join(lines)
+        return "|".join(price_parts)
     
     def fetch_and_process_prices(self):
         """Fetch all prices and process."""

@@ -104,32 +104,114 @@ class NotificationService:
         return False
     
     def format_price_message(self, data: Dict) -> str:
-        """Format price update message."""
+        """Format price update message as BTC:xxx|ETH:xxx|..."""
         prices = data.get("prices", {})
-        volatilities = data.get("volatilities", [])
         
-        lines = ["💰 <b>Giá coin cập nhật:</b>\n"]
-        
+        # Format prices as BTC:xxx|ETH:xxx|...
+        price_parts = []
         for symbol, price in prices.items():
             coin_name = symbol.replace("USDT", "")
-            lines.append(f"{coin_name}: ${price:,.2f}")
+            # Format price without $ and commas, keep 2 decimal places
+            price_parts.append(f"{coin_name}:{price:.2f}")
         
-        # Add volatility alerts
-        if volatilities:
-            lines.append("\n🚨 <b>Cảnh báo biến động:</b>")
-            for vol in volatilities:
-                vol_type = vol.get("type", "")
-                change = vol.get("change_5m") or vol.get("change_15m", 0)
-                symbol = vol.get("symbol", "").replace("USDT", "")
-                
-                if vol_type == "pump":
-                    lines.append(f"🚀 {symbol}: +{change:.2f}% ({vol.get('timeframe', '')})")
-                elif vol_type == "dump":
-                    lines.append(f"⚠️ {symbol}: {change:.2f}% ({vol.get('timeframe', '')})")
-                elif vol_type == "btc_movement":
-                    lines.append(f"📊 BTC: {change:+.2f}% (15m)")
+        return "|".join(price_parts)
+    
+    def get_market_outlook_summary(self, asset_symbol: str) -> Dict:
+        """Get overall market outlook and suggest LONG/SHORT bias."""
+        from shared.config import COLLECTION_ANALYSIS
+        analysis_collection = self.db[COLLECTION_ANALYSIS]
         
-        return "\n".join(lines)
+        try:
+            # Get latest analysis
+            latest_analysis = analysis_collection.find_one(
+                sort=[("timestamp", -1)]
+            )
+            
+            if not latest_analysis:
+                return {"outlook": "Không có dữ liệu", "bias": "NEUTRAL"}
+            
+            # Get symbol analyses
+            symbol_analyses = latest_analysis.get("symbol_analyses", {}).get(asset_symbol, {})
+            
+            if not symbol_analyses:
+                return {"outlook": "Không có dữ liệu", "bias": "NEUTRAL"}
+            
+            # Analyze timeframes: 1h, 4h, 1d, 3d, 1w
+            bullish_count = 0
+            bearish_count = 0
+            neutral_count = 0
+            timeframe_trends = {}
+            
+            for tf in ["1h", "4h", "1d", "3d", "1w"]:
+                if tf in symbol_analyses:
+                    analysis = symbol_analyses[tf]
+                    dow = analysis.get("dow", {})
+                    trend = dow.get("trend", "neutral")
+                    timeframe_trends[tf] = trend
+                    
+                    if trend == "bullish":
+                        bullish_count += 1
+                    elif trend == "bearish":
+                        bearish_count += 1
+                    else:
+                        neutral_count += 1
+            
+            # Determine overall bias
+            total_timeframes = len(timeframe_trends)
+            if total_timeframes == 0:
+                return {"outlook": "Không có dữ liệu", "bias": "NEUTRAL"}
+            
+            # Calculate trend strength
+            bullish_ratio = bullish_count / total_timeframes
+            bearish_ratio = bearish_count / total_timeframes
+            
+            # Generate outlook summary
+            if bullish_ratio >= 0.6:
+                bias = "LONG"
+                outlook = "Xu hướng tăng mạnh"
+                emoji = "🟢"
+            elif bearish_ratio >= 0.6:
+                bias = "SHORT"
+                outlook = "Xu hướng giảm mạnh"
+                emoji = "🔴"
+            elif bullish_ratio > bearish_ratio:
+                bias = "LONG"
+                outlook = "Xu hướng tăng nhẹ"
+                emoji = "🟡"
+            elif bearish_ratio > bullish_ratio:
+                bias = "SHORT"
+                outlook = "Xu hướng giảm nhẹ"
+                emoji = "🟡"
+            else:
+                bias = "NEUTRAL"
+                outlook = "Thị trường đi ngang"
+                emoji = "⚪"
+            
+            # Add timeframe summary
+            tf_summary = []
+            for tf in ["1h", "4h", "1d", "3d", "1w"]:
+                if tf in timeframe_trends:
+                    trend = timeframe_trends[tf]
+                    if trend == "bullish":
+                        tf_summary.append(f"{tf}:🟢")
+                    elif trend == "bearish":
+                        tf_summary.append(f"{tf}:🔴")
+                    else:
+                        tf_summary.append(f"{tf}:⚪")
+            
+            outlook_detail = f"{outlook} ({', '.join(tf_summary)})"
+            
+            return {
+                "outlook": outlook_detail,
+                "bias": bias,
+                "emoji": emoji,
+                "bullish_count": bullish_count,
+                "bearish_count": bearish_count,
+                "total_timeframes": total_timeframes
+            }
+        except Exception as e:
+            logger.error(f"Error getting market outlook: {e}")
+            return {"outlook": "Lỗi phân tích", "bias": "NEUTRAL"}
     
     def format_signal_message(self, signal_data: Dict) -> str:
         """Format trading signal message."""
@@ -172,6 +254,18 @@ class NotificationService:
         sl = signal.get("stop_loss")
         if sl:
             lines.append(f"<b>Stop Loss:</b> ${sl:,.2f}\n")
+        
+        # Market Outlook Summary
+        outlook_summary = self.get_market_outlook_summary(signal.get("asset", ""))
+        if outlook_summary and outlook_summary.get("outlook"):
+            bias = outlook_summary.get("bias", "NEUTRAL")
+            bias_emoji = "📈" if bias == "LONG" else "📉" if bias == "SHORT" else "➡️"
+            outlook_text = outlook_summary.get("outlook", "")
+            outlook_emoji = outlook_summary.get("emoji", "⚪")
+            
+            lines.append(f"<b>📊 Nhận định thị trường:</b>")
+            lines.append(f"{outlook_emoji} {outlook_text}")
+            lines.append(f"<b>Gợi ý:</b> {bias_emoji} <b>{bias}</b>\n")
         
         # Reasons
         reasons = signal.get("reasons", {})
