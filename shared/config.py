@@ -29,7 +29,7 @@ COINS_ENV = os.getenv("COINS", "BTCUSDT,ETHUSDT,SOLUSDT,BNBUSDT")
 COINS: List[str] = [coin.strip() for coin in COINS_ENV.split(",") if coin.strip()]
 
 # Timeframes for candlesticks
-TIMEFRAMES = ["1m", "1h", "4h", "8h", "1d", "3d", "1w"]
+TIMEFRAMES = ["1m", "15m", "1h", "4h", "8h", "1d", "3d", "1w"]
 
 # Collections
 COLLECTION_MARKET_DATA = "market_data"

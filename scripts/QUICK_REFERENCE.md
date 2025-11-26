@@ -12,11 +12,13 @@
 
 ## 📋 Common Tasks
 
-### Start/Stop
+### Start/Stop/Rebuild
 ```bash
-./scripts/deploy/start.sh
-./scripts/deploy/stop.sh
-./scripts/deploy/restart.sh
+./scripts/deploy/start.sh              # Start system
+./scripts/deploy/stop.sh               # Stop system
+./scripts/deploy/restart.sh            # Restart (no rebuild)
+./scripts/deploy/rebuild.sh            # Rebuild all with new code
+./scripts/deploy/rebuild_service.sh [service]  # Rebuild one service
 ```
 
 ### Monitor
@@ -51,6 +53,7 @@
 | Problem | Solution |
 |---------|----------|
 | Service not starting | `./scripts/utils/validate_config.sh` |
+| Code changes not applied | `./scripts/deploy/rebuild.sh` or `./scripts/deploy/rebuild_service.sh [service]` |
 | Connection issues | `./scripts/monitor/test_connection.sh` |
 | Health problems | `./scripts/monitor/health.sh` |
 | Need to rollback | `./scripts/release/rollback.sh [env]` |

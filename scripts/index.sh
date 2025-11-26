@@ -14,41 +14,43 @@ show_menu() {
     echo "  1. Start System"
     echo "  2. Stop System"
     echo "  3. Restart System"
-    echo "  4. Restart Service"
+    echo "  4. Rebuild System (with new code)"
+    echo "  5. Restart Service"
+    echo "  6. Rebuild Service (with new code)"
     echo ""
     echo "📊 MONITORING"
-    echo "  5. View Logs"
-    echo "  6. System Status"
-    echo "  7. Health Check"
-    echo "  8. Statistics"
-    echo "  9. Real-time Monitor"
-    echo "  10. Metrics"
-    echo "  11. Test Connections"
+    echo "  7. View Logs"
+    echo "  8. System Status"
+    echo "  9. Health Check"
+    echo "  10. Statistics"
+    echo "  11. Real-time Monitor"
+    echo "  12. Metrics"
+    echo "  13. Test Connections"
     echo ""
     echo "🔧 UTILITIES"
-    echo "  12. Backup Database"
-    echo "  13. Restore Database"
-    echo "  14. Export Data"
-    echo "  15. Import Data"
-    echo "  16. Validate Config"
-    echo "  17. Check Dependencies"
-    echo "  18. Scale Service"
-    echo "  19. Access Containers (Interactive)"
-    echo "  20. Execute Command in Container"
-    echo "  21. Open Shell in Container"
+    echo "  14. Backup Database"
+    echo "  15. Restore Database"
+    echo "  16. Export Data"
+    echo "  17. Import Data"
+    echo "  18. Validate Config"
+    echo "  19. Check Dependencies"
+    echo "  20. Scale Service"
+    echo "  21. Access Containers (Interactive)"
+    echo "  22. Execute Command in Container"
+    echo "  23. Open Shell in Container"
     echo ""
     echo "🚀 RELEASE"
-    echo "  22. Version Management"
-    echo "  23. Build Images"
-    echo "  24. Push Images"
-    echo "  25. Create Release"
-    echo "  26. Deploy to Environment"
-    echo "  27. Rollback"
+    echo "  24. Version Management"
+    echo "  25. Build Images"
+    echo "  26. Push Images"
+    echo "  27. Create Release"
+    echo "  28. Deploy to Environment"
+    echo "  29. Rollback"
     echo ""
-    echo "  28. Quick Start Guide"
-    echo "  29. Exit"
+    echo "  30. Quick Start Guide"
+    echo "  31. Exit"
     echo ""
-    read -p "Select option [1-29]: " choice
+    read -p "Select option [1-31]: " choice
 }
 
 run_script() {
@@ -71,67 +73,72 @@ while true; do
         1) run_script "deploy" "start.sh" ;;
         2) run_script "deploy" "stop.sh" ;;
         3) run_script "deploy" "restart.sh" ;;
-        4) 
+        4) run_script "deploy" "rebuild.sh" ;;
+        5) 
             read -p "Service name: " service
             run_script "deploy" "restart_service.sh" "$service"
             ;;
-        5)
+        6)
+            read -p "Service name: " service
+            run_script "deploy" "rebuild_service.sh" "$service"
+            ;;
+        7)
             read -p "Service name (optional): " service
             run_script "monitor" "logs.sh" "$service"
             ;;
-        6) run_script "monitor" "status.sh" ;;
-        7) run_script "monitor" "health.sh" ;;
-        8) run_script "monitor" "stats.sh" ;;
-        9) run_script "monitor" "monitor.sh" ;;
-        10) run_script "monitor" "metrics.sh" ;;
-        11) run_script "monitor" "test_connection.sh" ;;
-        12) run_script "utils" "backup.sh" ;;
-        13)
+        8) run_script "monitor" "status.sh" ;;
+        9) run_script "monitor" "health.sh" ;;
+        10) run_script "monitor" "stats.sh" ;;
+        11) run_script "monitor" "monitor.sh" ;;
+        12) run_script "monitor" "metrics.sh" ;;
+        13) run_script "monitor" "test_connection.sh" ;;
+        14) run_script "utils" "backup.sh" ;;
+        15)
             read -p "Backup file: " backup_file
             run_script "utils" "restore.sh" "$backup_file"
             ;;
-        14) run_script "utils" "export_data.sh" ;;
-        15)
+        16) run_script "utils" "export_data.sh" ;;
+        17)
             read -p "Export file: " export_file
             run_script "utils" "import_data.sh" "$export_file"
             ;;
-        16) run_script "utils" "validate_config.sh" ;;
-        17) run_script "utils" "check_dependencies.sh" ;;
-        18)
+        18) run_script "utils" "validate_config.sh" ;;
+        19) run_script "utils" "check_dependencies.sh" ;;
+        20)
             read -p "Service name: " service
             read -p "Replicas: " replicas
             run_script "utils" "scale.sh" "$service" "$replicas"
             ;;
-        19) run_script "utils" "access.sh" ;;
-        20)
+        21) run_script "utils" "access.sh" ;;
+        22)
             read -p "Container name: " container
             read -p "Command: " cmd
             run_script "utils" "exec.sh" "$container" "$cmd"
             ;;
-        21)
+        23)
             read -p "Container name: " container
             read -p "Shell (sh/bash, default: sh): " shell
             run_script "utils" "shell.sh" "$container" "${shell:-sh}"
             ;;
-        22)
+        24)
             read -p "Command (get/set/bump/show): " cmd
             read -p "Value (optional): " value
             run_script "release" "version.sh" "$cmd" "$value"
             ;;
-        23) run_script "release" "build.sh" ;;
-        24) run_script "release" "push.sh" ;;
-        25) run_script "release" "release.sh" ;;
-        26)
+        25) run_script "release" "build.sh" ;;
+        26) run_script "release" "push.sh" ;;
+        27) run_script "release" "release.sh" ;;
+        28)
             read -p "Environment (staging/production): " env
             run_script "release" "deploy.sh" "$env"
             ;;
-        27)
+        29)
             read -p "Environment (staging/production): " env
             read -p "Version (optional): " version
             run_script "release" "rollback.sh" "$env" "$version"
             ;;
-        28) bash "$SCRIPT_DIR/quick_start.sh" ;;
-        29)
+        30) bash "$SCRIPT_DIR/quick_start.sh" ;;
+        31)
             echo "👋 Goodbye!"
             exit 0
             ;;
@@ -141,7 +148,7 @@ while true; do
             ;;
     esac
     
-    if [ $? -ne 0 ] && [ "$choice" != "29" ]; then
+    if [ $? -ne 0 ] && [ "$choice" != "31" ]; then
         read -p "Press Enter to continue..."
     fi
 done

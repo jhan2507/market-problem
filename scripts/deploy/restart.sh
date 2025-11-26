@@ -1,12 +1,43 @@
 #!/bin/bash
-# Script restart hệ thống
+# =============================================================================
+# Script Name: restart.sh
+# Description: Restart the entire Crypto Market Monitoring System (no rebuild)
+# Category: DEPLOY
+# Usage: ./scripts/deploy/restart.sh
+# =============================================================================
 
-echo "🔄 Restarting Crypto Market Monitoring System..."
+set -euo pipefail
 
-docker-compose restart
+# =============================================================================
+# Configuration
+# =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo ""
-echo "✅ System restarted successfully!"
-echo ""
-echo "📊 View logs: ./scripts/monitor/logs.sh"
+# =============================================================================
+# Functions
+# =============================================================================
+
+log_success() {
+    echo "✅ $*"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    echo "🔄 Restarting Crypto Market Monitoring System..."
+    
+    cd "$PROJECT_ROOT"
+    docker-compose restart
+    
+    echo ""
+    log_success "System restarted successfully!"
+    echo ""
+    echo "📊 View logs: ./scripts/monitor/logs.sh"
+}
+
+# Run main function
+main "$@"
 

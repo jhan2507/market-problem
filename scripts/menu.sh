@@ -11,19 +11,21 @@ show_menu() {
     echo "1. 🚀 Start System"
     echo "2. 🛑 Stop System"
     echo "3. 🔄 Restart System"
-    echo "4. 📊 View Logs"
-    echo "5. 📈 System Status"
-    echo "6. 🏥 Health Check"
-    echo "7. 📊 Statistics"
-    echo "8. 📺 Real-time Monitor"
-    echo "9. 🔄 Restart Service"
-    echo "10. 💾 Backup Database"
-    echo "11. 🔄 Restore Database"
-    echo "12. 🧹 Cleanup"
-    echo "13. 🐳 Access Containers"
-    echo "14. ❌ Exit"
+    echo "4. 🔨 Rebuild System (with new code)"
+    echo "5. 📊 View Logs"
+    echo "6. 📈 System Status"
+    echo "7. 🏥 Health Check"
+    echo "8. 📊 Statistics"
+    echo "9. 📺 Real-time Monitor"
+    echo "10. 🔄 Restart Service"
+    echo "11. 🔨 Rebuild Service (with new code)"
+    echo "12. 💾 Backup Database"
+    echo "13. 🔄 Restore Database"
+    echo "14. 🧹 Cleanup"
+    echo "15. 🐳 Access Containers"
+    echo "16. ❌ Exit"
     echo ""
-    read -p "Select option [1-14]: " choice
+    read -p "Select option [1-16]: " choice
 }
 
 while true; do
@@ -43,6 +45,10 @@ while true; do
             read -p "Press Enter to continue..."
             ;;
         4)
+            ./scripts/deploy/rebuild.sh
+            read -p "Press Enter to continue..."
+            ;;
+        5)
             echo ""
             echo "Available services:"
             echo "  1. market_data_service"
@@ -68,22 +74,22 @@ while true; do
             ./scripts/monitor/logs.sh "$SERVICE"
             read -p "Press Enter to continue..."
             ;;
-        5)
+        6)
             ./scripts/monitor/status.sh
             read -p "Press Enter to continue..."
             ;;
-        6)
+        7)
             ./scripts/monitor/health.sh
             read -p "Press Enter to continue..."
             ;;
-        7)
+        8)
             ./scripts/monitor/stats.sh
             read -p "Press Enter to continue..."
             ;;
-        8)
+        9)
             ./scripts/monitor/monitor.sh
             ;;
-        9)
+        10)
             echo ""
             echo "Available services:"
             echo "  1. market_data_service"
@@ -105,11 +111,33 @@ while true; do
             fi
             read -p "Press Enter to continue..."
             ;;
-        10)
+        11)
+            echo ""
+            echo "Available services:"
+            echo "  1. market_data_service"
+            echo "  2. market_analyzer_service"
+            echo "  3. price_service"
+            echo "  4. signal_service"
+            echo "  5. notification_service"
+            read -p "Select service [1-5]: " service_choice
+            case $service_choice in
+                1) SERVICE="market_data_service" ;;
+                2) SERVICE="market_analyzer_service" ;;
+                3) SERVICE="price_service" ;;
+                4) SERVICE="signal_service" ;;
+                5) SERVICE="notification_service" ;;
+                *) SERVICE="" ;;
+            esac
+            if [ ! -z "$SERVICE" ]; then
+                ./scripts/deploy/rebuild_service.sh "$SERVICE"
+            fi
+            read -p "Press Enter to continue..."
+            ;;
+        12)
             ./scripts/utils/backup.sh
             read -p "Press Enter to continue..."
             ;;
-        11)
+        13)
             echo ""
             echo "Available backups:"
             ls -lh backups/*.gz 2>/dev/null || echo "  No backups found"
@@ -120,14 +148,14 @@ while true; do
             fi
             read -p "Press Enter to continue..."
             ;;
-        12)
+        14)
             ./scripts/utils/cleanup.sh
             read -p "Press Enter to continue..."
             ;;
-        13)
+        15)
             ./scripts/utils/access.sh
             ;;
-        14)
+        16)
             echo "👋 Goodbye!"
             exit 0
             ;;

@@ -13,7 +13,9 @@ scripts/
 │   ├── start.sh               # Khởi động hệ thống
 │   ├── stop.sh                # Dừng hệ thống
 │   ├── restart.sh             # Restart hệ thống
-│   ├── restart_service.sh    # Restart một service
+│   ├── rebuild.sh             # Rebuild hệ thống với code mới
+│   ├── restart_service.sh     # Restart một service
+│   ├── rebuild_service.sh     # Rebuild một service với code mới
 │   └── *.bat                  # Windows versions
 │
 ├── monitor/                    # 📊 MONITORING

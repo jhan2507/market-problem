@@ -4,11 +4,13 @@
 
 Hệ thống có **40+ scripts** được tổ chức thành **4 categories chính**:
 
-### 📦 DEPLOYMENT (8 scripts)
+### 📦 DEPLOYMENT (10 scripts)
 - `start.sh` - Khởi động hệ thống
 - `stop.sh` - Dừng hệ thống  
 - `restart.sh` - Restart hệ thống
+- `rebuild.sh` - Rebuild hệ thống với code mới
 - `restart_service.sh` - Restart một service
+- `rebuild_service.sh` - Rebuild một service với code mới
 - Windows versions (.bat)
 
 ### 📊 MONITORING (7 scripts)
@@ -59,6 +61,8 @@ Hệ thống có **40+ scripts** được tổ chức thành **4 categories chí
 ## 📚 Documentation
 
 - `README.md` - Full documentation
+- `STANDARDS.md` - Coding standards và best practices
+- `TEMPLATE.sh` - Template chuẩn cho scripts mới
 - `QUICK_REFERENCE.md` - Quick reference guide
 - `RELEASE.md` - Release management guide
 - `ORGANIZATION.md` - Organization structure
@@ -73,6 +77,8 @@ Hệ thống có **40+ scripts** được tổ chức thành **4 categories chí
 5. **import_data.sh** - Import MongoDB data
 6. **scale.sh** - Scale services
 7. **check_dependencies.sh** - Check prerequisites
+8. **rebuild.sh** - Rebuild toàn bộ hệ thống với code mới
+9. **rebuild_service.sh** - Rebuild một service với code mới
 
 ## 🎨 Benefits của cấu trúc mới
 

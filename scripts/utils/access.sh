@@ -1,7 +1,13 @@
 #!/bin/bash
 # Interactive script to access Docker containers
 
-set -e
+# Load .env file if exists to avoid IMAGE_REGISTRY warnings
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
+# Don't exit on error for better UX
+set +e
 
 show_menu() {
     echo "🐳 Docker Container Access"
@@ -20,31 +26,61 @@ show_menu() {
     echo ""
 }
 
+check_container() {
+    local container_name=$1
+    if ! docker ps --format "{{.Names}}" | grep -q "^${container_name}$"; then
+        echo "❌ Container '$container_name' is not running"
+        echo ""
+        echo "Running containers:"
+        docker ps --format "  - {{.Names}}" | grep market_ || echo "  (none)"
+        return 1
+    fi
+    return 0
+}
+
 mongodb_shell() {
-    echo "🗄️  Opening MongoDB Shell..."
+    if ! check_container "market_mongodb"; then
+        return 1
+    fi
+    
+    echo "🗄️  Opening MongoDB Shell (market database)..."
     echo ""
-    docker-compose exec market_mongodb mongosh \
+    # Use docker exec directly to avoid docker-compose warnings
+    # Connect directly to 'market' database
+    docker exec -it market_mongodb mongosh \
         --authenticationDatabase admin \
         -u admin \
-        -p password
+        -p password \
+        market
 }
 
 redis_cli() {
+    if ! check_container "market_redis"; then
+        return 1
+    fi
+    
     echo "🔴 Opening Redis CLI..."
     echo ""
-    docker-compose exec market_redis redis-cli
+    # Use docker exec directly to avoid docker-compose warnings
+    docker exec -it market_redis redis-cli
 }
 
 service_shell() {
     local service_name=$1
+    
+    if ! check_container "$service_name"; then
+        return 1
+    fi
+    
     echo "🐚 Opening shell in $service_name..."
     echo ""
     
+    # Use docker exec directly to avoid docker-compose warnings
     # Try bash first, fallback to sh
-    if docker-compose exec "$service_name" which bash > /dev/null 2>&1; then
-        docker-compose exec "$service_name" bash
+    if docker exec "$service_name" which bash > /dev/null 2>&1; then
+        docker exec -it "$service_name" bash
     else
-        docker-compose exec "$service_name" sh
+        docker exec -it "$service_name" sh
     fi
 }
 
@@ -59,9 +95,8 @@ custom_command() {
     echo "Enter container name:"
     read -r container_name
     
-    if ! docker ps --format "{{.Names}}" | grep -q "^${container_name}$"; then
-        echo "❌ Container '$container_name' is not running"
-        return
+    if ! check_container "$container_name"; then
+        return 1
     fi
     
     echo "Enter command to execute:"
@@ -70,7 +105,8 @@ custom_command() {
     echo ""
     echo "🔧 Executing: $command"
     echo ""
-    docker-compose exec "$container_name" sh -c "$command"
+    # Use docker exec directly to avoid docker-compose warnings
+    docker exec "$container_name" sh -c "$command"
 }
 
 main() {

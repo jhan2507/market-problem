@@ -1,10 +1,41 @@
 #!/bin/bash
-# Script dừng hệ thống
+# =============================================================================
+# Script Name: stop.sh
+# Description: Stop the entire Crypto Market Monitoring System
+# Category: DEPLOY
+# Usage: ./scripts/deploy/stop.sh
+# =============================================================================
 
-echo "🛑 Stopping Crypto Market Monitoring System..."
+set -euo pipefail
 
-docker-compose down
+# =============================================================================
+# Configuration
+# =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo ""
-echo "✅ System stopped successfully!"
+# =============================================================================
+# Functions
+# =============================================================================
+
+log_success() {
+    echo "✅ $*"
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+    echo "🛑 Stopping Crypto Market Monitoring System..."
+    
+    cd "$PROJECT_ROOT"
+    docker-compose down
+    
+    echo ""
+    log_success "System stopped successfully!"
+}
+
+# Run main function
+main "$@"
 

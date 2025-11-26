@@ -2,6 +2,9 @@
 
 Tài liệu hướng dẫn sử dụng các scripts quản lý và theo dõi hệ thống.
 
+> **📋 Standards**: Xem [STANDARDS.md](./STANDARDS.md) để biết các chuẩn coding và best practices.
+> **📝 Template**: Xem [TEMPLATE.sh](./TEMPLATE.sh) để có template chuẩn cho scripts mới.
+
 ## Cấu trúc thư mục
 
 Scripts được tổ chức theo tính năng:
@@ -10,12 +13,16 @@ Scripts được tổ chức theo tính năng:
 scripts/
 ├── index.sh              # Main entry point - menu chính
 ├── quick_start.sh        # Quick start guide
+├── TEMPLATE.sh           # Template chuẩn cho scripts mới
+├── STANDARDS.md          # Coding standards và best practices
 │
 ├── deploy/               # Deployment scripts
 │   ├── start.sh
 │   ├── stop.sh
 │   ├── restart.sh
+│   ├── rebuild.sh        # Rebuild system with new code
 │   ├── restart_service.sh
+│   ├── rebuild_service.sh # Rebuild service with new code
 │   └── *.bat (Windows versions)
 │
 ├── monitor/              # Monitoring scripts
@@ -98,13 +105,42 @@ Dừng toàn bộ hệ thống.
 ```bash
 ./scripts/deploy/restart.sh
 ```
-Restart toàn bộ hệ thống.
+Restart toàn bộ hệ thống (không rebuild images).
+
+### Rebuild System (with new code)
+```bash
+./scripts/deploy/rebuild.sh
+```
+Rebuild tất cả Docker images với code mới và restart hệ thống.
+- Build lại tất cả images với `--no-cache`
+- Stop tất cả services
+- Start lại với images mới
+
+**Lưu ý:** Sử dụng script này sau khi bạn đã cập nhật code và muốn áp dụng code mới.
 
 ### Restart Service
 ```bash
 ./scripts/deploy/restart_service.sh [service_name]
 ```
-Restart một service cụ thể.
+Restart một service cụ thể (không rebuild image).
+
+### Rebuild Service (with new code)
+```bash
+./scripts/deploy/rebuild_service.sh [service_name]
+```
+Rebuild Docker image cho một service cụ thể với code mới và restart service.
+- Build lại image với `--no-cache`
+- Stop service
+- Remove container cũ
+- Start lại với image mới
+
+**Lưu ý:** Sử dụng script này khi bạn chỉ sửa một service và muốn áp dụng code mới nhanh hơn.
+
+**Ví dụ:**
+```bash
+# Rebuild notification_service sau khi sửa code
+./scripts/deploy/rebuild_service.sh notification_service
+```
 
 ## 📊 MONITORING
 
