@@ -23,10 +23,14 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
-from shared.logger import setup_logger
+from shared.logger import setup_logger, set_correlation_id
 from shared.database import get_database
 from shared.events import subscribe_events, publish_event
-from shared.config import (
+from shared.shutdown import register_shutdown_handler
+from shared.base_service import BaseService
+from shared.exceptions import DatabaseError, EventPublishError, ServiceError
+from pymongo.errors import PyMongoError
+from shared.config_manager import (
     COLLECTION_ANALYSIS, COLLECTION_SIGNALS,
     EVENT_MARKET_ANALYSIS_COMPLETED, EVENT_SIGNAL_GENERATED
 )
@@ -38,10 +42,11 @@ from shared.theories import (
 logger = setup_logger("signal_service")
 
 
-class SignalService:
+class SignalService(BaseService):
     """Service for generating trading signals."""
     
     def __init__(self):
+        super().__init__("signal_service", port=8003)
         self.db = get_database()
         self.analysis_collection = self.db[COLLECTION_ANALYSIS]
         self.signals_collection = self.db[COLLECTION_SIGNALS]
@@ -53,8 +58,25 @@ class SignalService:
                 sort=[("timestamp", -1)]
             )
             return latest
+        except PyMongoError as e:
+            error = DatabaseError(
+                f"Failed to get latest analysis: {e}",
+                operation="find_one",
+                collection=COLLECTION_ANALYSIS
+            )
+            logger.error(str(error))
+            if self.metrics:
+                self.metrics.record_error("database_query_failed")
+            return None
         except Exception as e:
-            logger.error(f"Error getting latest analysis: {e}")
+            error = ServiceError(
+                f"Unexpected error getting latest analysis: {e}",
+                service_name="signal_service",
+                error_code="UNEXPECTED_ERROR"
+            )
+            logger.error(str(error), exc_info=True)
+            if self.metrics:
+                self.metrics.record_error("unexpected_error")
             return None
     
     def score_multi_timeframe_trend(self, analyses: Dict[str, Dict], 
@@ -451,10 +473,28 @@ class SignalService:
                         "score": signal["score"],
                         "confidence": signal["confidence"]
                     }
-                    publish_event(EVENT_SIGNAL_GENERATED, event_data)
+                    publish_event(EVENT_SIGNAL_GENERATED, event_data, service_name="signal_service")
+                    if self.metrics:
+                        self.metrics.record_event_published(EVENT_SIGNAL_GENERATED)
                     logger.info(f"Published signal_generated event: {signal['signal_id']}")
+                except PyMongoError as e:
+                    error = DatabaseError(
+                        f"Failed to store signal {signal.get('signal_id')}: {e}",
+                        operation="insert_one",
+                        collection=COLLECTION_SIGNALS
+                    )
+                    logger.error(str(error))
+                    if self.metrics:
+                        self.metrics.record_error("database_insert_failed")
                 except Exception as e:
-                    logger.error(f"Error storing signal: {e}")
+                    error = ServiceError(
+                        f"Unexpected error storing signal: {e}",
+                        service_name="signal_service",
+                        error_code="SIGNAL_STORE_ERROR"
+                    )
+                    logger.error(str(error), exc_info=True)
+                    if self.metrics:
+                        self.metrics.record_error("signal_store_failed")
         
         if not signals_generated:
             logger.info("No signals generated (scores below threshold)")
@@ -464,26 +504,38 @@ class SignalService:
         logger.info("Received market_analysis_completed event, generating signals")
         self.generate_signals()
     
+    def on_shutdown(self):
+        """Cleanup on shutdown."""
+        # Additional cleanup if needed
+        pass
+    
     def run(self):
-        """Main service loop."""
+        """Main service loop - event-driven pattern."""
         logger.info("Signal Service started")
-        
-        # Subscribe to analysis completed events
-        def event_handler(event_name: str, data: Dict):
-            if event_name == EVENT_MARKET_ANALYSIS_COMPLETED:
-                self.handle_analysis_completed(event_name, data)
+        self._running = True
         
         try:
+            # Setup observability, health, service discovery (from BaseService)
+            self.setup()
+            
+            # Subscribe to analysis completed events
+            def event_handler(event_name: str, data: Dict):
+                if event_name == EVENT_MARKET_ANALYSIS_COMPLETED:
+                    self.handle_analysis_completed(event_name, data)
+            
             subscribe_events(
                 [EVENT_MARKET_ANALYSIS_COMPLETED],
                 event_handler,
                 consumer_group="signal_service",
-                consumer_name="signal_1"
+                consumer_name="signal_1",
+                running_flag=lambda: self._running
             )
         except KeyboardInterrupt:
             logger.info("Service stopped by user")
         except Exception as e:
-            logger.error(f"Error in service loop: {e}")
+            logger.error(f"Error in service loop: {e}", exc_info=True)
+        finally:
+            logger.info("Signal Service stopped")
 
 
 if __name__ == "__main__":

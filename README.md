@@ -4,13 +4,22 @@ Hệ thống microservice theo dõi thị trường crypto và phát tín hiệu
 
 ## Kiến trúc hệ thống
 
-Hệ thống gồm 5 microservices độc lập:
+Hệ thống gồm 5 microservices độc lập + API Gateway:
 
 1. **Market Data Service** - Thu thập dữ liệu giá, candlesticks, và metrics thị trường
 2. **Crypto Market Analyzer** - Phân tích thị trường sử dụng Dow Theory, Wyckoff, Gann
 3. **Price Service** - Theo dõi giá real-time và phát hiện biến động
 4. **Signal Service** - Tạo tín hiệu LONG/SHORT với hệ thống scoring (0-100)
 5. **Notification Service** - Gửi thông báo qua Telegram
+6. **API Gateway** - Single entry point với service discovery và rate limiting
+
+### Architecture Overview
+
+Xem chi tiết kiến trúc tại [docs/architecture/](docs/architecture/):
+- [System Architecture](docs/architecture/architecture.md) - High-level system overview
+- [Service Interaction](docs/architecture/service-interaction.md) - Event-driven communication
+- [Data Flow](docs/architecture/data-flow.md) - Data flow through the system
+- [Deployment](docs/architecture/deployment.md) - Deployment architecture
 
 ## Công nghệ sử dụng
 
@@ -383,27 +392,70 @@ Xem chi tiết trong [scripts/release/README.md](scripts/release/README.md)
 
 ## Phát triển
 
-### Chạy service riêng lẻ
+### Development Setup
+
+Xem [Developer Guide](docs/DEVELOPER_GUIDE.md) để biết chi tiết về:
+- Setup development environment
+- Code style guidelines
+- Testing guidelines
+- How to add new service
+- How to add new event type
+- Debugging tips
+
+### Quick Start for Development
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Set environment variables
+# Setup pre-commit hooks
+pre-commit install
+
+# Copy environment file
+cp env.example .env
+# Edit .env with your configuration
+
+# Start dependencies (MongoDB, Redis)
+docker-compose up -d mongodb redis
+
+# Run service locally
 export MONGODB_URI="mongodb://admin:password@localhost:27017/market?authSource=admin"
 export REDIS_HOST="localhost"
-# ... other env vars
-
-# Run service
 python services/market_data_service/main.py
 ```
 
 ### Testing
 
-Mỗi service có thể test độc lập bằng cách:
-1. Start MongoDB và Redis
-2. Set environment variables
-3. Run service script
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=shared --cov=services --cov-report=html
+
+# Run specific test types
+pytest tests/unit -m unit
+pytest tests/integration -m integration
+```
+
+### Code Quality
+
+```bash
+# Format code
+black --line-length=100 .
+
+# Lint code
+flake8 .
+
+# Type checking
+mypy .
+
+# Sort imports
+isort --profile=black .
+
+# Run all checks (via pre-commit)
+pre-commit run --all-files
+```
 
 ## Lưu ý
 
@@ -452,6 +504,21 @@ Xem chi tiết trong [scripts/git/README.md](scripts/git/README.md)
 # Merge to production
 ./scripts/git/merge_to_production.sh staging
 ```
+
+## Documentation
+
+- [Developer Guide](docs/DEVELOPER_GUIDE.md) - Complete development guide
+- [Architecture Diagrams](docs/architecture/) - System architecture documentation
+- [API Documentation](docs/api/openapi.yaml) - OpenAPI specification
+
+## Contributing
+
+1. Follow code style guidelines (Black, flake8, mypy)
+2. Write tests for new features
+3. Update documentation as needed
+4. Ensure all tests pass before submitting
+
+See [Developer Guide](docs/DEVELOPER_GUIDE.md) for detailed contribution guidelines.
 
 ## License
 

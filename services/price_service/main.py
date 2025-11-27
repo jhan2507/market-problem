@@ -16,10 +16,16 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from collections import defaultdict
 
-from shared.logger import setup_logger
+from shared.logger import setup_logger, set_correlation_id
 from shared.database import get_database
 from shared.events import publish_event
-from shared.config import (
+from shared.health import HealthChecker
+from shared.http_server import ServiceHTTPServer
+from shared.shutdown import get_shutdown_manager, register_shutdown_handler
+from shared.metrics import MetricsCollector
+from shared.tracing import setup_tracing, get_tracer
+from shared.service_discovery import get_service_registry
+from shared.config_manager import (
     BINANCE_API_URL, COINS,
     COLLECTION_PRICE_UPDATES, EVENT_PRICE_UPDATE_READY
 )
@@ -34,6 +40,8 @@ class PriceService:
         self.db = get_database()
         self.collection = self.db[COLLECTION_PRICE_UPDATES]
         self.session = requests.Session()
+        self._running = True
+        self.metrics = None
         
         # Store price history for volatility detection
         self.price_history = defaultdict(list)  # symbol -> [(timestamp, price), ...]
@@ -167,7 +175,9 @@ class PriceService:
                 "volatilities": volatilities,
                 "has_volatility": len(volatilities) > 0
             }
-            publish_event(EVENT_PRICE_UPDATE_READY, event_data)
+            publish_event(EVENT_PRICE_UPDATE_READY, event_data, service_name="price_service")
+            if self.metrics:
+                self.metrics.record_event_published(EVENT_PRICE_UPDATE_READY)
             logger.info("Published price_update_ready event")
         except Exception as e:
             logger.error(f"Error storing price update: {e}")
@@ -176,17 +186,54 @@ class PriceService:
         """Main service loop."""
         logger.info("Price Service started")
         
-        while True:
+        # Setup tracing
+        setup_tracing("price_service")
+        
+        # Setup metrics
+        metrics = MetricsCollector("price_service")
+        self.metrics = metrics
+        
+        # Setup health checker and HTTP server
+        health_checker = HealthChecker("price_service")
+        http_server = ServiceHTTPServer("price_service", port=8002, health_checker=health_checker, metrics_collector=metrics)
+        http_server.start()
+        
+        # Register with service discovery
+        registry = get_service_registry()
+        registry.register_service(
+            "price_service",
+            host="localhost",
+            port=8002,
+            health_check_url="http://localhost:8002/health"
+        )
+        
+        # Register shutdown handler
+        def shutdown_handler():
+            logger.info("Shutting down Price Service...")
+            self._running = False
+            registry.unregister_service("price_service")
+            if self.session:
+                self.session.close()
+        
+        register_shutdown_handler(shutdown_handler)
+        
+        while self._running:
             try:
                 self.fetch_and_process_prices()
                 # Run every 60 seconds
-                time.sleep(60)
+                for _ in range(60):  # Check _running every second
+                    if not self._running:
+                        break
+                    time.sleep(1)
             except KeyboardInterrupt:
                 logger.info("Service stopped by user")
                 break
             except Exception as e:
                 logger.error(f"Error in service loop: {e}")
-                time.sleep(60)
+                if self._running:
+                    time.sleep(60)
+        
+        logger.info("Price Service stopped")
 
 
 if __name__ == "__main__":

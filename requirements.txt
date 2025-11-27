@@ -5,5 +5,37 @@ redis==5.0.1
 pandas==2.1.4
 numpy==1.26.2
 
+# Web framework for health checks
+flask==3.0.0
+flask-limiter==3.5.0
+
+# Observability
+prometheus-client==0.19.0
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-instrumentation==0.42b0
+opentelemetry-instrumentation-flask==0.42b0
+opentelemetry-instrumentation-requests==0.42b0
+opentelemetry-exporter-prometheus==0.42b0
+
+# Resilience
+tenacity==8.2.3
+circuitbreaker==2.0.0
+
+# Validation
+pydantic==2.5.3
+
+# Testing
+pytest==7.4.3
+pytest-requests==0.1.0
+pytest-cov==4.1.0
+
+# Code quality
+flake8==6.1.0
+black==23.12.1
+mypy==1.8.0
+isort==5.13.2
+pre-commit==3.6.0
+
 # Optional but recommended
 python-dotenv==1.0.0

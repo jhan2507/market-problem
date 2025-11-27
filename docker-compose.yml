@@ -3,12 +3,13 @@ services:
     image: mongo:7.0
     container_name: market_mongodb
     ports:
-      - "27017:27017"
+      - "${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB:-market}
     networks:
       - market_network
     healthcheck:
@@ -21,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: market_redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -38,11 +39,14 @@ services:
       context: .
       dockerfile: services/market_data_service/Dockerfile
     container_name: market_data_service
+    ports:
+      - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - BINANCE_API_URL=https://api.binance.com
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27017/market?authSource=admin}
+      - MONGODB_DB=${MONGODB_DB:-market}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - BINANCE_API_URL=${BINANCE_API_URL:-https://api.binance.com}
       - CMC_API_KEY=${CMC_API_KEY}
       - COINS=${COINS}
     depends_on:
@@ -53,6 +57,12 @@ services:
     networks:
       - market_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   market_analyzer_service:
     image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-market-analyzer-service:${IMAGE_VERSION:-latest}
@@ -60,10 +70,13 @@ services:
       context: .
       dockerfile: services/market_analyzer_service/Dockerfile
     container_name: market_analyzer_service
+    ports:
+      - "8001:8001"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27017/market?authSource=admin}
+      - MONGODB_DB=${MONGODB_DB:-market}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -72,6 +85,12 @@ services:
     networks:
       - market_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   price_service:
     image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-price-service:${IMAGE_VERSION:-latest}
@@ -79,11 +98,14 @@ services:
       context: .
       dockerfile: services/price_service/Dockerfile
     container_name: price_service
+    ports:
+      - "8002:8002"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - BINANCE_API_URL=https://api.binance.com
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27017/market?authSource=admin}
+      - MONGODB_DB=${MONGODB_DB:-market}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - BINANCE_API_URL=${BINANCE_API_URL:-https://api.binance.com}
       - COINS=${COINS}
     depends_on:
       mongodb:
@@ -93,6 +115,12 @@ services:
     networks:
       - market_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   signal_service:
     image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-signal-service:${IMAGE_VERSION:-latest}
@@ -100,10 +128,13 @@ services:
       context: .
       dockerfile: services/signal_service/Dockerfile
     container_name: signal_service
+    ports:
+      - "8003:8003"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27017/market?authSource=admin}
+      - MONGODB_DB=${MONGODB_DB:-market}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -112,6 +143,12 @@ services:
     networks:
       - market_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   notification_service:
     image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-notification-service:${IMAGE_VERSION:-latest}
@@ -119,13 +156,18 @@ services:
       context: .
       dockerfile: services/notification_service/Dockerfile
     container_name: notification_service
+    ports:
+      - "8004:8004"
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/market?authSource=admin
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://admin:password@mongodb:27017/market?authSource=admin}
+      - MONGODB_DB=${MONGODB_DB:-market}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_PRICE_CHAT_ID=${TELEGRAM_PRICE_CHAT_ID}
       - TELEGRAM_SIGNAL_CHAT_ID=${TELEGRAM_SIGNAL_CHAT_ID}
+      - CMC_API_KEY=${CMC_API_KEY}
+      - BINANCE_API_URL=${BINANCE_API_URL:-https://api.binance.com}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -134,6 +176,48 @@ services:
     networks:
       - market_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  api_gateway:
+    image: ${IMAGE_REGISTRY:+${IMAGE_REGISTRY}/}${IMAGE_PREFIX:-market}-api-gateway:${IMAGE_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: services/api_gateway/Dockerfile
+    container_name: api_gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+    depends_on:
+      redis:
+        condition: service_healthy
+      market_data_service:
+        condition: service_healthy
+      market_analyzer_service:
+        condition: service_healthy
+      price_service:
+        condition: service_healthy
+      signal_service:
+        condition: service_healthy
+      notification_service:
+        condition: service_healthy
+    networks:
+      - market_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   mongodb_data:

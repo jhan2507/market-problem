@@ -1,9 +1,21 @@
 """
 Shared configuration for all microservices.
+
+DEPRECATED: This module is deprecated. Use shared.config_manager instead.
+This file is kept for backward compatibility only.
+Please migrate to: from shared.config_manager import <CONSTANT_NAME>
 """
 
+import warnings
 import os
 from typing import List
+
+# Deprecation warning
+warnings.warn(
+    "shared.config is deprecated. Use shared.config_manager instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # MongoDB
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://admin:password@localhost:27017/market?authSource=admin")

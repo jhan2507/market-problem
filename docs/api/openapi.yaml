@@ -1,0 +1,377 @@
+openapi: 3.0.0
+info:
+  title: Market Problem Microservices API
+  version: 2.2.0
+  description: |
+    API documentation for Market Problem microservices.
+    Each service exposes health check and metrics endpoints.
+    
+    **Authentication**: API key authentication is optional and can be enabled via `API_KEY_ENABLED` environment variable.
+    When enabled, the `/metrics` endpoint requires an API key in the `X-API-Key` header or `api_key` query parameter.
+    
+    **Rate Limiting**: Rate limiting is enabled by default (60 requests per minute). Health endpoints are exempt from rate limiting.
+    
+    **Service Discovery**: All services register with service discovery on startup and can be accessed via API Gateway.
+
+servers:
+  - url: http://localhost:8080
+    description: API Gateway (recommended - routes to all services)
+  - url: http://localhost:8000
+    description: Market Data Service (direct access)
+  - url: http://localhost:8001
+    description: Market Analyzer Service (direct access)
+  - url: http://localhost:8002
+    description: Price Service (direct access)
+  - url: http://localhost:8003
+    description: Signal Service (direct access)
+  - url: http://localhost:8004
+    description: Notification Service (direct access)
+
+paths:
+  /api/{service}/{path}:
+    get:
+      summary: Proxy request to service
+      description: |
+        Routes request to appropriate microservice through API Gateway.
+        The API Gateway handles service discovery, health checking, and rate limiting.
+      tags:
+        - API Gateway
+      parameters:
+        - name: service
+          in: path
+          required: true
+          description: Service name
+          schema:
+            type: string
+            enum: [market_data, market_analyzer, price, signal, notification]
+            example: market_data
+        - name: path
+          in: path
+          required: true
+          description: Path to forward to the service (e.g., health, status, metrics)
+          schema:
+            type: string
+            example: health
+      responses:
+        '200':
+          description: Success - response from the target service
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Service not found or path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Not Found
+                message: Service or path not found
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '503':
+          description: Service unavailable (not healthy or not registered)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Service Unavailable
+                message: Service is not available or not healthy
+
+  /services:
+    get:
+      summary: List all registered services
+      description: Returns list of all services registered with service discovery
+      tags:
+        - Service Discovery
+      responses:
+        '200':
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceInfo'
+              example:
+                services:
+                  - name: market_data_service
+                    host: localhost
+                    port: 8000
+                    health_check_url: http://localhost:8000/health
+                    last_heartbeat: "2024-01-01T12:00:00Z"
+                  - name: market_analyzer_service
+                    host: localhost
+                    port: 8001
+                    health_check_url: http://localhost:8001/health
+                    last_heartbeat: "2024-01-01T12:00:00Z"
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns service health status. This endpoint is public and does not require authentication.
+        It is exempt from rate limiting for monitoring purposes.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                service: market_data_service
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: unhealthy
+                service: market_data_service
+
+  /ready:
+    get:
+      summary: Readiness check endpoint
+      description: |
+        Returns service readiness status. A service is ready when it can accept traffic.
+        This endpoint is public and does not require authentication.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+              example:
+                status: ready
+                service: market_data_service
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+              example:
+                status: not_ready
+                service: market_data_service
+
+  /status:
+    get:
+      summary: Detailed status endpoint
+      description: |
+        Returns detailed service status including dependency checks (database, Redis).
+        This endpoint is public and does not require authentication.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                service: market_data_service
+                status: healthy
+                uptime_seconds: 3600
+                checks:
+                  database:
+                    status: ok
+                    last_check: "2024-01-01T12:00:00Z"
+                  redis:
+                    status: ok
+                    last_check: "2024-01-01T12:00:00Z"
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /metrics:
+    get:
+      summary: Prometheus metrics endpoint
+      description: |
+        Returns Prometheus-formatted metrics. This endpoint may require API key authentication
+        if `API_KEY_ENABLED=true`. Rate limiting applies (default: 60 requests/minute).
+      tags:
+        - Metrics
+      security:
+        - ApiKeyAuth: []
+        - ApiKeyQuery: []
+      parameters:
+        - name: api_key
+          in: query
+          required: false
+          description: API key (alternative to X-API-Key header)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Metrics data in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP http_requests_total Total HTTP requests
+                # TYPE http_requests_total counter
+                http_requests_total{method="GET",endpoint="health",status="200"} 100
+                # HELP http_request_duration_seconds HTTP request duration
+                # TYPE http_request_duration_seconds histogram
+                http_request_duration_seconds{method="GET",endpoint="health"} 0.001
+        '401':
+          description: Unauthorized (invalid or missing API key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Unauthorized
+                message: Invalid or missing API key
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+              example:
+                error: Rate Limit Exceeded
+                message: Too many requests. Please try again later.
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication (required if API_KEY_ENABLED=true)
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key
+      description: API key as query parameter (alternative to header)
+  
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          example: healthy
+        service:
+          type: string
+          example: market_data_service
+    
+    ReadyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+          example: ready
+        service:
+          type: string
+          example: market_data_service
+    
+    StatusResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          example: market_data_service
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          example: healthy
+        uptime_seconds:
+          type: number
+          example: 3600
+        checks:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                last_check:
+                  type: string
+                  format: date-time
+            redis:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                last_check:
+                  type: string
+                  format: date-time
+    
+    ServiceInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: market_data_service
+        host:
+          type: string
+          example: localhost
+        port:
+          type: integer
+          example: 8000
+        health_check_url:
+          type: string
+          example: http://localhost:8000/health
+        last_heartbeat:
+          type: string
+          format: date-time
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Unauthorized
+        message:
+          type: string
+          example: Invalid or missing API key
+    
+    RateLimitError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Rate Limit Exceeded
+        message:
+          type: string
+          example: Too many requests. Please try again later.
+
+tags:
+  - name: API Gateway
+    description: API Gateway endpoints
+  - name: Service Discovery
+    description: Service discovery endpoints
+  - name: Health
+    description: Health check endpoints (public, no authentication required)
+  - name: Metrics
+    description: Metrics endpoints (may require API key if enabled)
+

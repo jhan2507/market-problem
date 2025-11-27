@@ -18,10 +18,16 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 import pandas as pd
 
-from shared.logger import setup_logger
+from shared.logger import setup_logger, set_correlation_id
 from shared.database import get_database
 from shared.events import subscribe_events, publish_event
-from shared.config import (
+from shared.health import HealthChecker
+from shared.http_server import ServiceHTTPServer
+from shared.shutdown import get_shutdown_manager, register_shutdown_handler
+from shared.metrics import MetricsCollector
+from shared.tracing import setup_tracing, get_tracer
+from shared.service_discovery import get_service_registry
+from shared.config_manager import (
     COLLECTION_MARKET_DATA, COLLECTION_ANALYSIS,
     EVENT_MARKET_DATA_UPDATED, EVENT_MARKET_ANALYSIS_COMPLETED
 )
@@ -40,6 +46,8 @@ class MarketAnalyzer:
         self.db = get_database()
         self.market_data_collection = self.db[COLLECTION_MARKET_DATA]
         self.analysis_collection = self.db[COLLECTION_ANALYSIS]
+        self._running = True
+        self.metrics = None
     
     def get_latest_market_data(self) -> Optional[Dict]:
         """Get latest market data from MongoDB."""
@@ -286,7 +294,9 @@ class MarketAnalyzer:
                 "trend_strength": sentiment_score["trend_strength"],
                 "symbols_analyzed": list(all_analyses.keys())
             }
-            publish_event(EVENT_MARKET_ANALYSIS_COMPLETED, event_data)
+            publish_event(EVENT_MARKET_ANALYSIS_COMPLETED, event_data, service_name="market_analyzer_service")
+            if self.metrics:
+                self.metrics.record_event_published(EVENT_MARKET_ANALYSIS_COMPLETED)
             logger.info("Published market_analysis_completed event")
         except Exception as e:
             logger.error(f"Error storing analysis: {e}")
@@ -300,6 +310,35 @@ class MarketAnalyzer:
         """Main service loop."""
         logger.info("Market Analyzer Service started")
         
+        # Setup tracing
+        setup_tracing("market_analyzer_service")
+        
+        # Setup metrics
+        metrics = MetricsCollector("market_analyzer_service")
+        self.metrics = metrics
+        
+        # Setup health checker and HTTP server
+        health_checker = HealthChecker("market_analyzer_service")
+        http_server = ServiceHTTPServer("market_analyzer_service", port=8001, health_checker=health_checker, metrics_collector=metrics)
+        http_server.start()
+        
+        # Register with service discovery
+        registry = get_service_registry()
+        registry.register_service(
+            "market_analyzer_service",
+            host="localhost",
+            port=8001,
+            health_check_url="http://localhost:8001/health"
+        )
+        
+        # Register shutdown handler
+        def shutdown_handler():
+            logger.info("Shutting down Market Analyzer Service...")
+            self._running = False
+            registry.unregister_service("market_analyzer_service")
+        
+        register_shutdown_handler(shutdown_handler)
+        
         # Subscribe to market_data_updated events
         def event_handler(event_name: str, data: Dict):
             if event_name == EVENT_MARKET_DATA_UPDATED:
@@ -310,12 +349,15 @@ class MarketAnalyzer:
                 [EVENT_MARKET_DATA_UPDATED],
                 event_handler,
                 consumer_group="market_analyzer",
-                consumer_name="analyzer_1"
+                consumer_name="analyzer_1",
+                running_flag=lambda: self._running
             )
         except KeyboardInterrupt:
             logger.info("Service stopped by user")
         except Exception as e:
             logger.error(f"Error in service loop: {e}")
+        finally:
+            logger.info("Market Analyzer Service stopped")
 
 
 if __name__ == "__main__":
